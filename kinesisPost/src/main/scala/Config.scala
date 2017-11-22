@@ -1,6 +1,7 @@
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.regions.{Region, Regions}
+import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 
 object Config {
 
@@ -12,4 +13,6 @@ object Config {
   )
 
   val streamName = "test"
+
+  val client = AmazonKinesisClientBuilder.standard().withCredentials(awsCredentialsProvider).withRegion(region.getName).build()
 }
