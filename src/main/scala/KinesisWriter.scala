@@ -2,8 +2,16 @@ import java.nio.ByteBuffer
 import java.util.UUID
 import Config.kinesisConfig
 import com.amazonaws.services.kinesis.model._
-
 import scala.util.{Failure, Success, Try}
+
+sealed trait KinesisWriterError {
+  def message: String
+}
+
+case class KinesisStreamNotFoundError(message: String) extends KinesisWriterError
+case class InvalidEventError(message: String) extends KinesisWriterError
+case class ThroughputExceededError(message: String) extends KinesisWriterError
+case class PutFailedError(message: String) extends KinesisWriterError
 
 object KinesisWriter {
 
@@ -21,28 +29,6 @@ object KinesisWriter {
       case Failure(f: ProvisionedThroughputExceededException) =>Left(ThroughputExceededError(f.getErrorMessage))
       case Failure(f) => Left(PutFailedError(f.getLocalizedMessage))
     }
-  }
-}
-
-sealed trait KinesisWriterError {
-  def message: String
-}
-
-case class KinesisStreamNotFoundError(message: String) extends KinesisWriterError
-case class InvalidEventError(message: String) extends KinesisWriterError
-case class ThroughputExceededError(message: String) extends KinesisWriterError
-case class PutFailedError(message: String) extends KinesisWriterError
-
-object Test {
-
-  implicit val stringToByte: String => Array[Byte] = _.getBytes()
-
-  def doing = {
-    KinesisWriter.put("hello") match {
-      case Right(s) => println(s)
-      case Left(f) => println("Put failed")
-    }
-
   }
 }
 
