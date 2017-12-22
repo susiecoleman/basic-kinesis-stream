@@ -32,3 +32,16 @@ object KinesisWriter {
   }
 }
 
+object Test {
+
+  implicit val stringToByte: String => Array[Byte] = _.getBytes()
+
+  def putting = {
+    KinesisWriter.put("hello") match {
+      case Right(s) => println(s)
+      case Left(f) => println("Put failed")
+    }
+
+  }
+}
+
