@@ -1,11 +1,14 @@
 import com.amazonaws.auth.{AWSCredentialsProviderChain, InstanceProfileCredentialsProvider}
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.regions.{Region, Regions}
-import com.amazonaws.services.kinesis.model.PutRecordRequest
+import com.amazonaws.services.kinesis.model.{ProvisionedThroughputExceededException, PutRecordRequest}
 import com.amazonaws.services.kinesis.{AmazonKinesis, AmazonKinesisClientBuilder}
 import org.scalatest.Matchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
+import org.mockito.ArgumentMatchers._
+
+import scala.reflect.ClassTag
 
 
 class KinesisWriterTest extends org.scalatest.FlatSpec with Matchers with MockitoSugar {
@@ -27,18 +30,26 @@ class KinesisWriterTest extends org.scalatest.FlatSpec with Matchers with Mockit
 
   it should "return a stream not found error" in {
     val config = KinesisConfig("InvalidStream", client)
+    testPutFailure[KinesisStreamNotFoundError](config)
+  }
+
+  it should "return throughput exceeded error" in {
+    val client = mock[AmazonKinesis]
+    when(client.putRecord(any())).thenThrow(new ProvisionedThroughputExceededException("Error throughput exceeded"))
+
+    val config = KinesisConfig("ThroughputExceeded", client)
+
+    testPutFailure[ThroughputExceededError](config)
+  }
+
+  private def testPutFailure[T <: KinesisWriterError](config: KinesisConfig)(implicit tag: ClassTag[T]) = {
     KinesisWriter.put(event)(config, stringToByte) match {
       case Left(error) => error match {
-        case _: KinesisStreamNotFoundError => assert(true)
-        case e => assert(false, s"Expected KinesisStreamNotFoundError got ${e.getClass}")
+        case _: T => assert(true)
+        case e => assert(false, s"Expected ${tag.runtimeClass} got ${e.getClass}")
       }
       case _ => assert(false, "Found right should always be left")
     }
   }
-
-//  it should "return throughput exceeded error" in {
-//    val client = mock[AmazonKinesis]
-//    when(client.putRecord)
-//  }
 
 }
