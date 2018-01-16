@@ -9,7 +9,6 @@ sealed trait KinesisWriterError {
 }
 
 case class KinesisStreamNotFoundError(message: String) extends KinesisWriterError
-case class InvalidEventError(message: String) extends KinesisWriterError
 case class ThroughputExceededError(message: String) extends KinesisWriterError
 case class PutFailedError(message: String) extends KinesisWriterError
 
@@ -25,7 +24,6 @@ object KinesisWriter {
     Try(config.client.putRecord(request)) match {
       case Success(_) => Right(event)
       case Failure(f: ResourceNotFoundException) => Left(KinesisStreamNotFoundError(f.getErrorMessage))
-      case Failure(f: InvalidArgumentException) => Left(InvalidEventError(f.getErrorMessage))
       case Failure(f: ProvisionedThroughputExceededException) =>Left(ThroughputExceededError(f.getErrorMessage))
       case Failure(f) => Left(PutFailedError(f.getLocalizedMessage))
     }
@@ -39,7 +37,7 @@ object Test {
   def putting = {
     KinesisWriter.put("hello") match {
       case Right(s) => println(s)
-      case Left(f) => println("Put failed")
+      case Left(f) => println(f)
     }
 
   }
