@@ -4,17 +4,17 @@ import Config.kinesisConfig
 import com.amazonaws.services.kinesis.model._
 import scala.util.{Failure, Success, Try}
 
-sealed trait KinesisWriterError {
+sealed trait KinesisError {
   def message: String
 }
 
-case class KinesisStreamNotFoundError(message: String) extends KinesisWriterError
-case class ThroughputExceededError(message: String) extends KinesisWriterError
-case class PutFailedError(message: String) extends KinesisWriterError
+case class KinesisStreamNotFoundError(message: String) extends KinesisError
+case class ThroughputExceededError(message: String) extends KinesisError
+case class KinesisGenericError(message: String) extends KinesisError
 
 object KinesisWriter {
 
-  def put[T](event: T)(implicit config: KinesisConfig, encoder: T => Array[Byte]): Either[KinesisWriterError, T] = {
+  def put[T](event: T)(implicit config: KinesisConfig, encoder: T => Array[Byte]): Either[KinesisError, T] = {
     val streamEvent: ByteBuffer = ByteBuffer.wrap(encoder(event))
     val partitionKey = UUID.randomUUID().toString
     val request: PutRecordRequest = new PutRecordRequest()
@@ -25,7 +25,7 @@ object KinesisWriter {
       case Success(_) => Right(event)
       case Failure(f: ResourceNotFoundException) => Left(KinesisStreamNotFoundError(f.getErrorMessage))
       case Failure(f: ProvisionedThroughputExceededException) =>Left(ThroughputExceededError(f.getErrorMessage))
-      case Failure(f) => Left(PutFailedError(f.getLocalizedMessage))
+      case Failure(f) => Left(KinesisGenericError(f.getLocalizedMessage))
     }
   }
 }

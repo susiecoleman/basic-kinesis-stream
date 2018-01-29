@@ -35,14 +35,14 @@ class KinesisWriterTest extends org.scalatest.FlatSpec with Matchers with Mockit
 
   it should "return throughput exceeded error" in {
     val client = mock[AmazonKinesis]
-    when(client.putRecord(any())).thenThrow(new ProvisionedThroughputExceededException("Error throughput exceeded"))
+    when(client.putRecord(any())).thenThrow(new ProvisionedThroughputExceededException("KinesisGenericError throughput exceeded"))
 
     val config = KinesisConfig("ThroughputExceeded", client)
 
     testPutFailure[ThroughputExceededError](config)
   }
 
-  private def testPutFailure[T <: KinesisWriterError](config: KinesisConfig)(implicit tag: ClassTag[T]) = {
+  private def testPutFailure[T <: KinesisError](config: KinesisConfig)(implicit tag: ClassTag[T]) = {
     KinesisWriter.put(event)(config, stringToByte) match {
       case Left(error) => error match {
         case _: T => assert(true)
