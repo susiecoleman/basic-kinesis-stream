@@ -34,8 +34,8 @@ object Test {
 
   implicit val stringToByte: String => Array[Byte] = _.getBytes()
 
-  def putting = {
-    KinesisWriter.put("hello") match {
+  def putting(record: String) = {
+    KinesisWriter.put(record) match {
       case Right(s) => println(s)
       case Left(f) => println(f)
     }
